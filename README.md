@@ -84,3 +84,9 @@ vpc_security_group_ids: IDs dos grupos de segurança da VPC para acesso ao banco
 
 ## Tabelas para a solução de Ponto
 ![Tabelas](doc/banco-de-dados.png)
+
+## Scripts para criação de tabelas
+
+- [Cria tabelas](/sql/cria-tabelas.sql)
+
+- [Adiciona situações](/sql/insere-situacoes.sql)
