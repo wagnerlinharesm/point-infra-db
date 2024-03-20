@@ -12,7 +12,8 @@ variable "subnet_ids" {
   type    = list(string)
   default = [
     "subnet-0c9e1d22c842d362b",
-    "subnet-08e43d2d7fa2c463e"
+    "subnet-08e43d2d7fa2c463e",
+    "subnet-0ff65a2cef8cdbbdb"
   ]
 }
 
@@ -31,12 +32,18 @@ variable "db_name" {
     default = "pointdb"
 }
 
+variable "vpc_id" {
+    type = string
+    default = "vpc-0ffc09ae69916058b"
+}
+
 variable "vpc_security_group_ids" {
   type    = list(string)
   default = [
     "sg-01f81ec455ea45da9",
   ]
 }
+
 variable "db_credentials_arn" {
     type = string
     default = "arn:aws:secretsmanager:us-east-2:644237782704:secret:mikes/db/db_credentials-6wQzyQ"
