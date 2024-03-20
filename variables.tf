@@ -19,7 +19,7 @@ variable "subnet_ids" {
 
 variable "db_identifier" {
     type = string
-    default = "point-db"
+    default = "point_db"
 }
 
 variable "db_allocated_storage" {
