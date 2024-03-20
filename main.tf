@@ -29,7 +29,7 @@ resource "aws_db_instance" "database" {
 }
 
 resource "aws_iam_role" "rds_proxy_role" {
-  name = "example"
+  name = "rds_proxy_role"
   assume_role_policy = jsonencode({
     "Version": "2012-10-17",
     "Statement": [
