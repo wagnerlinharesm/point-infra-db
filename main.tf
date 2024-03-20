@@ -28,62 +28,75 @@ resource "aws_db_instance" "database" {
   vpc_security_group_ids        = var.vpc_security_group_ids
 }
 
-resource "aws_iam_role" "example" {
+resource "aws_iam_role" "rds_proxy_role" {
   name = "example"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "rds.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    },
-    {
-      "Action": "rds-db:connect",
-      "Effect": "Allow",
-      "Resource": "*"
-    }
-  ]
-}
-EOF
+  assume_role_policy = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": "sts:AssumeRole",
+        "Principal": {
+          "Service": "rds.amazonaws.com"
+        },
+        "Effect": "Allow",
+        "Sid": ""
+      }
+    ]
+  })
 }
 
-resource "aws_db_proxy" "example" {
-  name = "awsdbproxy"
-  debug_logging = false
-  engine_family = "POSTGRESQL"
-  idle_client_timeout = 1800
-  require_tls = true
-  role_arn = aws_iam_role.example.arn
-  vpc_security_group_ids = var.vpc_security_group_ids
-  vpc_subnet_ids = var.subnet_ids
+resource "aws_iam_policy" "rds_proxy_policy" {
+  name        = "rds-proxy-policy"
+  description = "Policy for RDS Proxy access"
+  policy      = jsonencode({
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": "rds-db:connect",
+        "Resource": "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "rds_proxy_attach" {
+  role       = aws_iam_role.rds_proxy_role.name
+  policy_arn = aws_iam_policy.rds_proxy_policy.arn
+}
+
+resource "aws_db_proxy" "rds_proxy" {
+  name                                                   = "awsdbproxy"
+  debug_logging                                          = false
+  engine_family                                          = "POSTGRESQL"
+  idle_client_timeout                                    = 1800
+  require_tls                                            = true
+  role_arn                                               = aws_iam_role.rds_proxy_role.arn
+  vpc_security_group_ids                                 = var.vpc_security_group_ids
+  vpc_subnet_ids                                         = var.subnet_ids
 
   auth {
-    auth_scheme                                           = "SECRETS"
-    description                                           = "example"
-    iam_auth                                              = "DISABLED"
-    secret_arn                                            = "arn:aws:secretsmanager:us-east-2:644237782704:secret:mikes/db/db_credentials-6wQzyQ"
+    auth_scheme                                          = "SECRETS"
+    description                                          = "example"
+    iam_auth                                             = "DISABLED"
+    secret_arn                                           = "arn:aws:secretsmanager:us-east-2:644237782704:secret:mikes/db/db_credentials-6wQzyQ"
   }
-  depends_on = [aws_db_instance.database]
+  depends_on                                             = [aws_db_instance.database]
 }
 
-resource "aws_db_proxy_default_target_group" "example" {
-  db_proxy_name = aws_db_proxy.example.name
+resource "aws_db_proxy_default_target_group" "rds_proxy_tg" {
+  db_proxy_name = aws_db_proxy.rds_proxy.name
   connection_pool_config {
-    connection_borrow_timeout       = 30
-    max_connections_percent         = 20
+    connection_borrow_timeout        = 30
+    max_connections_percent          = 20
     max_idle_connections_percent     = 20
   }
 }
 
-resource "aws_db_proxy_target" "example" {
-  db_proxy_name = aws_db_proxy.example.name
-  target_group_name = aws_db_proxy_default_target_group.example.name
-  db_instance_identifier = aws_db_instance.database.identifier
+resource "aws_db_proxy_target" "rds_proxy_tg" {
+  db_proxy_name           = aws_db_proxy.rds_proxy.name
+  target_group_name       = aws_db_proxy_default_target_group.rds_proxy_tg.name
+  db_instance_identifier  = aws_db_instance.database.identifier
 }
 
 data "aws_secretsmanager_secret_version" "db_credentials" {
