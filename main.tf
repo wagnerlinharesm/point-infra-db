@@ -56,7 +56,6 @@ resource "aws_db_proxy" "example" {
   role_arn = aws_iam_role.example.arn
   vpc_security_group_ids = var.vpc_security_group_ids
   vpc_subnet_ids = var.subnet_ids
-  db_instance_identifier = aws_db_instance.database.id
 
   auth {
     auth_scheme                                           = "SECRETS"
@@ -74,6 +73,12 @@ resource "aws_db_proxy_default_target_group" "example" {
     max_connections_percent         = 100
     max_idle_connections_percent     = 50
   }
+}
+
+resource "aws_db_proxy_target" "example" {
+  db_proxy_name = aws_db_proxy.example.name
+  target_group_name = aws_db_proxy_default_target_group.example.name
+  db_instance_identifier = aws_db_instance.example.id
 }
 
 data "aws_secretsmanager_secret_version" "db_credentials" {
