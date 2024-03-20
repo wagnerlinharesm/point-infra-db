@@ -26,6 +26,7 @@ resource "aws_db_instance" "database" {
   db_subnet_group_name          = aws_db_subnet_group.database.name
   apply_immediately             = true
   vpc_security_group_ids        = var.vpc_security_group_ids
+  publicly_accessible           = true
 }
 
 resource "aws_iam_role" "rds_proxy_role" {
