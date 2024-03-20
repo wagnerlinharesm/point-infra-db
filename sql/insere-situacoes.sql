@@ -1,2 +1,2 @@
-INSERT INTO situacao_ponto (descricao) VALUES ('VALIDO');
-INSERT INTO situacao_ponto (descricao) VALUES ('ABERTO');
+INSERT INTO situacao_ponto (situacao) VALUES ('FECHADO');
+INSERT INTO situacao_ponto (situacao) VALUES ('ABERTO');

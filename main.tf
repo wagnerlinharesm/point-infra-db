@@ -41,6 +41,11 @@ resource "aws_iam_role" "example" {
       },
       "Effect": "Allow",
       "Sid": ""
+    },
+    {
+      "Action": "rds-db:connect",
+      "Effect": "Allow",
+      "Resource": "*"
     }
   ]
 }
@@ -69,9 +74,9 @@ resource "aws_db_proxy" "example" {
 resource "aws_db_proxy_default_target_group" "example" {
   db_proxy_name = aws_db_proxy.example.name
   connection_pool_config {
-    connection_borrow_timeout       = 120
-    max_connections_percent         = 100
-    max_idle_connections_percent     = 50
+    connection_borrow_timeout       = 30
+    max_connections_percent         = 20
+    max_idle_connections_percent     = 20
   }
 }
 
