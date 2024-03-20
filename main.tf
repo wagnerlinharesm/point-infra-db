@@ -48,7 +48,7 @@ EOF
 }
 
 resource "aws_db_proxy" "example" {
-  name = "example"
+  name = "awsdbproxy"
   debug_logging = false
   engine_family = "POSTGRESQL"
   idle_client_timeout = 1800
