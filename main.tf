@@ -56,6 +56,7 @@ resource "aws_db_proxy" "example" {
   role_arn = aws_iam_role.example.arn
   vpc_security_group_ids = var.vpc_security_group_ids
   vpc_subnet_ids = var.subnet_ids
+  db_instance_identifier = aws_db_instance.database.id
 
   auth {
     auth_scheme                                           = "SECRETS"
