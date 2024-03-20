@@ -67,7 +67,7 @@ resource "aws_iam_role_policy_attachment" "rds_proxy_attach" {
 }
 
 resource "aws_db_proxy" "rds_proxy" {
-  name                                                   = "rds_proxy"
+  name                                                   = "rdsproxy"
   debug_logging                                          = false
   engine_family                                          = "POSTGRESQL"
   idle_client_timeout                                    = 1800
