@@ -28,29 +28,52 @@ resource "aws_db_instance" "database" {
   vpc_security_group_ids        = var.vpc_security_group_ids
 }
 
-resource "aws_rds_cluster" "rds-proxy-test" {
-  availability_zones           = ["us-east-2a", "us-east-2b", "us-east-2c"]
-  cluster_identifier           = "rds-proxy-test"
-  database_name                = var.db_name
-  db_subnet_group_name         = aws_db_subnet_group.database.id
-  engine                       = "postgres"
-  master_password              = "123456"
-  master_username              = "postgres"
-  skip_final_snapshot          = true
-  vpc_security_group_ids       = var.vpc_security_group_ids
-  allocated_storage            = 20  # 20 GB of storage
-  db_cluster_instance_class    = "db.t3.micro"  # Instance class for the cluster
+resource "aws_iam_role" "example" {
+  name = "example"
+  assume_role_policy = <<EOF
+{
+  "Version": "sts:AssumeRole",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "rds.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
 }
 
-resource "aws_rds_cluster_instance" "rds-proxy-test" {
-  cluster_identifier           = aws_rds_cluster.rds-proxy-test.id
-  db_subnet_group_name         = aws_db_subnet_group.database.id
-  engine                       = "postgres"
-  identifier                   = "rds-proxy-test-a"
-  instance_class               = "db.t3.micro"
-  publicly_accessible          = "true"
+resource "aws_db_proxy" "example" {
+  name = "example"
+  debug_logging = false
+  engine_family = "POSTGRESQL"
+  idle_client_timeout = 1800
+  require_tls = true
+  role_arn = aws_iam_role.example.arn
+  vpc_security_group_ids = var.vpc_security_group_ids
+  vpc_subnet_ids = var.subnet_ids
+
+  auth {
+    auth_scheme                                           = "SECRETS"
+    description                                           = "example"
+    iam_auth                                              = "DISABLED"
+    secret_arn                                            = "arn:aws:secretsmanager:us-east-2:644237782704:secret:mikes/db/db_credentials-6wQzyQ"
+  }
+  depends_on = [aws_db_instance.database]
 }
 
+resource "aws_db_proxy_default_target_group" "example" {
+  db_proxy_name = aws_db_proxy.example.name
+  connection_pool_config {
+    connection_borrow_timeout       = 120
+    max_connections_percent         = 100
+    max_idle_connections_percent     = 50
+  }
+}
 
 data "aws_secretsmanager_secret_version" "db_credentials" {
   secret_id = var.db_credentials_arn
