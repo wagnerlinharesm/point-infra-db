@@ -62,7 +62,7 @@ resource "aws_iam_policy" "rds_proxy_policy" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ],
-        Resource = "arn:aws:secretsmanager:us-east-2:644237782704:secret:mikes/db/db_credentials-6wQzyQ"
+        Resource = "*"
       }
     ]
   })
