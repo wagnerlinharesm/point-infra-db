@@ -47,14 +47,24 @@ resource "aws_iam_role" "rds_proxy_role" {
 
 resource "aws_iam_policy" "rds_proxy_policy" {
   name        = "rds-proxy-policy"
-  description = "Policy for RDS Proxy access"
+  description = "Policy for RDS Proxy access and to access secrets in Secrets Manager"
   policy      = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [{
-      "Effect": "Allow",
-      "Action": "rds-db:connect",
-      "Resource": "*"
-    }]
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "rds-db:connect",
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ],
+        Resource = "arn:aws:secretsmanager:us-east-2:644237782704:secret:mikes/db/db_credentials-6wQzyQ"
+      }
+    ]
   })
 }
 
