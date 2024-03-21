@@ -65,10 +65,10 @@ resource "aws_iam_role_policy_attachment" "rds_proxy_attach" {
 
 resource "aws_db_proxy" "rds_proxy" {
   name                    = "rdsproxy"
-  debug_logging           = false
+  debug_logging           = true
   engine_family           = "POSTGRESQL"
   idle_client_timeout     = 1800
-  require_tls             = true
+  require_tls             = false
   role_arn                = aws_iam_role.rds_proxy_role.arn
   vpc_security_group_ids  = var.vpc_security_group_ids
   vpc_subnet_ids          = var.subnet_ids
