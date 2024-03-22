@@ -1,86 +1,63 @@
 # Infraestrutura do Banco de Dados
 
-## Descrição Geral
+## Visão Geral
 
-Este documento descreve a infraestrutura do banco de dados utilizada no projeto. A infraestrutura consiste em um banco de dados PostgreSQL hospedado na AWS.
+Este projeto Terraform é projetado para configurar uma infraestrutura AWS robusta, focando na implantação de uma instância de banco de dados PostgreSQL dentro de uma VPC personalizada, utilizando o AWS RDS e o AWS Secrets Manager para o gerenciamento de credenciais. Além disso, configura um RDS Proxy para gerenciar conexões ao banco de dados e melhora a segurança e a escalabilidade.
 
-## Tecnologias Utilizadas
+## Pré-requisitos
 
-- PostgreSQL
-- AWS RDS (Relational Database Service)
+- Conta AWS
+- Terraform instalado
+- Configuração AWS CLI
 
-## Detalhes da Infraestrutura
+## Recursos AWS Provisionados
 
-A infraestrutura do banco de dados é provisionada utilizando o Terraform e está configurada da seguinte forma:
+### VPC
 
-1 - Backend do Terraform: O estado do Terraform é armazenado no S3 para garantir a consistência e segurança do estado.
+aws_vpc.mikes_private_vpc: Cria uma VPC com um bloco CIDR 10.0.0.0/16 para alojar recursos de rede privados.
 
-```hcl
-terraform {
-  backend "s3" {
-    bucket = "point-terraform-state"
-    key    = "point-db.tfstate"
-    region = "us-east-2"
-    encrypt = true
-  }
-}
-```
+### Grupo de Sub-redes do Banco de Dados
 
-2 - Provider AWS: Utilizamos o provedor AWS para provisionar os recursos na AWS.
+aws_db_subnet_group.database: Define um grupo de sub-redes para o banco de dados RDS, permitindo que a instância do banco de dados opere em várias zonas de disponibilidade.
 
-```hcl
-provider "aws" {
-  region = var.region
-}
-```
+### Instância do Banco de Dados
 
-3 - Grupo de Sub-redes do Banco de Dados: Criamos um grupo de sub-redes do banco de dados para especificar as sub-redes nas quais o banco de dados será lançado.
+aws_db_instance.database: Implementa uma instância de banco de dados PostgreSQL com configurações especificadas, incluindo tamanho de armazenamento, nome do banco de dados e credenciais de acesso obtidas do AWS Secrets Manager.
 
-```hcl
-resource "aws_db_subnet_group" "database" {
-  name       = var.aws_db_subnet_group_name
-  subnet_ids = var.subnet_ids
-}
-```
+### Papéis e Políticas do IAM
 
-4 - Instância do Banco de Dados: Provisionamos uma instância do banco de dados PostgreSQL na AWS RDS.
+aws_iam_role.rds_proxy_role: Cria um papel do IAM para o RDS Proxy assumir.
+aws_iam_policy.rds_proxy_policy: Define uma política do IAM que concede permissões necessárias para o RDS Proxy operar, incluindo acesso ao AWS Secrets Manager e conexões ao banco de dados.
+aws_iam_role_policy_attachment.rds_proxy_attach: Anexa a política do IAM ao papel do RDS Proxy.
 
-```hcl
-resource "aws_db_instance" "database" {
-  identifier                    = var.db_identifier
-  allocated_storage             = var.db_allocated_storage
-  db_name                       = var.db_name
-  engine                        = "postgres"
-  engine_version                = "14"
-  instance_class                = "db.t3.micro"
-  username                      = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)["username"]
-  password                      = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)["password"]
-  skip_final_snapshot           = true
-  allow_major_version_upgrade   = true
-  db_subnet_group_name          = aws_db_subnet_group.database.name
-  apply_immediately             = true
-  vpc_security_group_ids        = var.vpc_security_group_ids
-}
-```
+### RDS Proxy
 
-5 - Secrets Manager para Credenciais do Banco de Dados: Utilizamos o AWS Secrets Manager para armazenar as credenciais do banco de dados de forma segura.
+aws_db_proxy.rds_proxy: Configura um RDS Proxy para gerenciar conexões ao banco de dados PostgreSQL, utilizando autenticação baseada em segredos do AWS Secrets Manager.
+aws_db_proxy_default_target_group.rds_proxy_tg: Configura o grupo alvo padrão para o RDS Proxy, incluindo configurações de pool de conexões.
+aws_db_proxy_target.rds_proxy_target: Define o alvo para o RDS Proxy, conectando-o à instância do banco de dados.
 
-```hcl
-data "aws_secretsmanager_secret_version" "db_credentials" {
-  secret_id = var.db_credentials_arn
-}
-```
+## Variáveis
 
-## Parâmetros de Configuração
+O projeto utiliza várias variáveis para permitir a personalização da infraestrutura provisionada, incluindo região da AWS, identificadores de sub-rede, identificador da instância do banco de dados, e ARN das credenciais do banco de dados.
 
-`region`: Região da AWS onde a infraestrutura será provisionada (padrão: us-east-2).
-`aws_db_subnet_group_name`: Nome do grupo de sub-redes do banco de dados.
-`subnet_ids`: IDs das sub-redes onde o banco de dados será lançado.
-`db_identifier`: Identificador único da instância do banco de dados.
-`db_allocated_storage`: Espaço de armazenamento alocado para o banco de dados em GB.
-`db_name`: Nome do banco de dados.
-vpc_security_group_ids: IDs dos grupos de segurança da VPC para acesso ao banco de dados.
-`db_credentials_arn`: ARN do Secrets Manager que armazena as credenciais do banco de dados.
+## Como Usar
+
+Para utilizar este projeto:
+
+1. Certifique-se de que todos os pré-requisitos estão atendidos.
+2. Clone o repositório do projeto para sua máquina local.
+3. Navegue até o diretório do projeto e inicialize o Terraform com terraform init.
+4. Revise o plano de execução do Terraform com terraform plan para entender as alterações que serão aplicadas.
+5. Aplique as configurações com terraform apply e confirme a operação.
+
+## Limpeza
+
+Para remover os recursos provisionados por este projeto, execute terraform destroy no diretório do projeto, confirmando a operação quando solicitado.
+
+## Segurança
+
+- As credenciais do banco de dados são gerenciadas de forma segura pelo AWS Secrets Manager.
+- O RDS Proxy melhora a segurança ao gerenciar conexões e autenticação para a instância do banco de dados.
 
 ## Tabelas para a solução de Ponto
 ![Tabelas](doc/banco-de-dados.png)
