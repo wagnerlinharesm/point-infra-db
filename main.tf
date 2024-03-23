@@ -20,7 +20,7 @@ resource "aws_db_instance" "database" {
   allocated_storage       = var.db_allocated_storage
   db_name                 = var.db_name
   engine                  = "postgres"
-  engine_version          = "16.1"
+  engine_version          = "16.2"
   instance_class          = "db.t3.micro"
   username                = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)["username"]
   password                = jsondecode(data.aws_secretsmanager_secret_version.db_credentials.secret_string)["password"]
